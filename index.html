@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>InstaFlow — Free Instagram Scheduler</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #16161f;
+    --border: #2a2a38;
+    --accent: #e040fb;
+    --accent2: #7c4dff;
+    --gold: #ffab40;
+    --green: #00e676;
+    --text: #f0f0f8;
+    --muted: #6b6b88;
+    --danger: #ff5252;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.2rem 2rem;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,15,0.92);
+    backdrop-filter: blur(12px);
+  }
+  .logo { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .badge { font-size: 0.68rem; background: var(--green); color: #000;
+    padding: 2px 8px; border-radius: 20px; font-weight: 700;
+    letter-spacing: 0.05em; margin-left: 8px;
+    -webkit-text-fill-color: #000;
+  }
+  .header-right { display: flex; gap: 12px; align-items: center; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
+  .status-dot.connected { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  #connection-status { font-size: 0.8rem; color: var(--muted); }
+
+  /* TABS */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border);
+    padding: 0 2rem; overflow-x: auto;
+  }
+  .tab {
+    padding: 1rem 1.4rem; font-size: 0.85rem; font-weight: 500;
+    color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent;
+    transition: all 0.2s; white-space: nowrap; font-family: 'Syne', sans-serif;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* MAIN LAYOUT */
+  main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* SECTION TITLE */
+  .section-title { font-family: 'Syne', sans-serif; font-size: 1.4rem;
+    font-weight: 700; margin-bottom: 0.3rem;
+  }
+  .section-sub { color: var(--muted); font-size: 0.85rem; margin-bottom: 2rem; }
+
+  /* CARDS */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 1.8rem;
+    margin-bottom: 1.5rem;
+  }
+  .card-title { font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 1rem; margin-bottom: 1.2rem; display: flex;
+    align-items: center; gap: 8px;
+  }
+  .card-title .icon { font-size: 1.1rem; }
+
+  /* FORM ELEMENTS */
+  .form-group { margin-bottom: 1.2rem; }
+  label { display: block; font-size: 0.8rem; color: var(--muted);
+    margin-bottom: 6px; font-weight: 500; letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  input, textarea, select {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); border-radius: 10px; padding: 0.75rem 1rem;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px rgba(224,64,251,0.12);
+  }
+  textarea { resize: vertical; min-height: 100px; }
+  select option { background: var(--card); }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 0.75rem 1.5rem; border-radius: 10px; border: none;
+    font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.88rem;
+    cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(224,64,251,0.35); }
+  .btn-secondary {
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-success { background: var(--green); color: #000; }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media(max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* ALERT BOX */
+  .alert {
+    border-radius: 10px; padding: 1rem 1.2rem;
+    font-size: 0.85rem; margin-bottom: 1.2rem; line-height: 1.6;
+  }
+  .alert-info { background: rgba(124,77,255,0.12); border: 1px solid rgba(124,77,255,0.3); color: #c5b3ff; }
+  .alert-warn { background: rgba(255,171,64,0.12); border: 1px solid rgba(255,171,64,0.3); color: var(--gold); }
+  .alert-success { background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3); color: var(--green); }
+  .alert-danger { background: rgba(255,82,82,0.1); border: 1px solid rgba(255,82,82,0.3); color: var(--danger); }
+
+  /* STEPS */
+  .steps { counter-reset: step; }
+  .step {
+    display: flex; gap: 1rem; margin-bottom: 1.5rem;
+    counter-increment: step;
+  }
+  .step-num {
+    flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.85rem;
+    color: #fff;
+  }
+  .step-content h4 { font-family: 'Syne', sans-serif; font-weight: 700;
+    margin-bottom: 0.3rem; font-size: 0.95rem;
+  }
+  .step-content p { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+  .step-content code {
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 2px 6px; border-radius: 5px; font-size: 0.8rem;
+    color: var(--accent); font-family: monospace;
+  }
+
+  /* QUEUE TABLE */
+  .queue-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .queue-table th {
+    text-align: left; color: var(--muted); font-weight: 500;
+    padding: 0.7rem 1rem; border-bottom: 1px solid var(--border);
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .queue-table td { padding: 0.9rem 1rem; border-bottom: 1px solid rgba(42,42,56,0.6); }
+  .queue-table tr:last-child td { border-bottom: none; }
+  .queue-table tr:hover td { background: rgba(224,64,251,0.04); }
+  .pill {
+    display: inline-block; padding: 2px 10px; border-radius: 20px;
+    font-size: 0.72rem; font-weight: 600;
+  }
+  .pill-scheduled { background: rgba(124,77,255,0.2); color: #c5b3ff; }
+  .pill-posted { background: rgba(0,230,118,0.15); color: var(--green); }
+  .pill-failed { background: rgba(255,82,82,0.15); color: var(--danger); }
+  .pill-draft { background: rgba(107,107,136,0.2); color: var(--muted); }
+
+  /* UPLOAD ZONE */
+  .upload-zone {
+    border: 2px dashed var(--border); border-radius: 12px;
+    padding: 2rem; text-align: center; cursor: pointer;
+    transition: all 0.2s; color: var(--muted);
+  }
+  .upload-zone:hover { border-color: var(--accent); color: var(--text); background: rgba(224,64,251,0.04); }
+  .upload-zone .upload-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+  .upload-zone p { font-size: 0.85rem; }
+  .upload-zone input[type=file] { display: none; }
+  #file-preview { margin-top: 1rem; }
+  #file-preview img, #file-preview video {
+    max-width: 100%; max-height: 200px; border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  /* CHAR COUNTER */
+  .char-counter { text-align: right; font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+  .char-counter.warn { color: var(--gold); }
+  .char-counter.over { color: var(--danger); }
+
+  /* STATS */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  @media(max-width: 700px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.3rem;
+  }
+  .stat-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 6px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; }
+  .stat-value.purple { color: var(--accent); }
+  .stat-value.green { color: var(--green); }
+  .stat-value.gold { color: var(--gold); }
+  .stat-value.blue { color: #40c4ff; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 2rem; right: 2rem;
+    background: var(--card); border: 1px solid var(--border);
+    padding: 0.9rem 1.4rem; border-radius: 12px;
+    font-size: 0.85rem; z-index: 9999;
+    transform: translateY(100px); opacity: 0;
+    transition: all 0.3s; max-width: 320px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { border-left: 3px solid var(--green); }
+  #toast.error { border-left: 3px solid var(--danger); }
+  #toast.info { border-left: 3px solid var(--accent); }
+
+  /* TOGGLE */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between;
+    padding: 0.8rem 0; border-bottom: 1px solid var(--border);
+  }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-info h5 { font-size: 0.9rem; font-weight: 500; }
+  .toggle-info p { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+  .toggle {
+    position: relative; width: 44px; height: 24px; cursor: pointer;
+  }
+  .toggle input { display: none; }
+  .toggle-track {
+    width: 100%; height: 100%; background: var(--border); border-radius: 20px;
+    transition: background 0.2s;
+  }
+  .toggle input:checked ~ .toggle-track { background: var(--accent); }
+  .toggle-thumb {
+    position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
+    background: #fff; border-radius: 50%; transition: left 0.2s;
+    pointer-events: none;
+  }
+  .toggle input:checked ~ .toggle-thumb { left: 23px; }
+
+  /* CODE BLOCK */
+  pre {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem; overflow-x: auto;
+    font-size: 0.8rem; color: #b0b0c8; line-height: 1.6;
+    font-family: 'Courier New', monospace;
+  }
+  .copy-btn {
+    float: right; font-size: 0.72rem; background: var(--border);
+    border: none; color: var(--text); padding: 3px 10px;
+    border-radius: 5px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  }
+  .copy-btn:hover { background: var(--accent); color: #fff; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* LOADING SPINNER */
+  .spinner {
+    width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span class="logo">InstaFlow</span>
+    <span class="badge">FREE</span>
+  </div>
+  <div class="header-right">
+    <span class="status-dot" id="dot"></span>
+    <span id="connection-status">Not connected</span>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('setup')">🔗 Setup</div>
+  <div class="tab" onclick="switchTab('create')">✏️ Create Post</div>
+  <div class="tab" onclick="switchTab('schedule')">📅 Schedule</div>
+  <div class="tab" onclick="switchTab('queue')">📋 Queue</div>
+  <div class="tab" onclick="switchTab('guide')">📖 GitHub Guide</div>
+</div>
+
+<main>
+
+  <!-- ====== SETUP PANEL ====== -->
+  <div class="panel active" id="panel-setup">
+    <p class="section-title">Connect Instagram</p>
+    <p class="section-sub">Enter your Instagram Graph API credentials to get started — 100% free.</p>
+
+    <div class="alert alert-warn">
+      ⚠️ <strong>Instagram requires an official API.</strong> Browser-based login automation is against Instagram's Terms of Service and leads to account bans. This tool uses the <strong>free Instagram Graph API</strong> — setup takes ~10 minutes. See the <a href="#" onclick="switchTab('guide')" style="color:var(--gold)">GitHub Guide tab</a> for full instructions.
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">🔑</span> API Credentials</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Access Token</label>
+          <input type="password" id="access-token" placeholder="EAAxxxxxxxx..." />
+        </div>
+        <div class="form-group">
+          <label>Instagram Business Account ID</label>
+          <input type="text" id="account-id" placeholder="17841400000000000" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Facebook App ID (optional — for token refresh)</label>
+        <input type="text" id="app-id" placeholder="123456789012345" />
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="saveCredentials()">💾 Save & Connect</button>
+        <button class="btn btn-secondary" onclick="testConnection()">🧪 Test Connection</button>
+        <button class="btn btn-secondary" onclick="clearCredentials()">🗑️ Clear</button>
+      </div>
+    </div>
+
+    <div class="card" id="account-info" style="display:none">
+      <div class="card-title"><span class="icon">✅</span> Connected Account</div>
+      <div id="account-details"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">🛡️</span> Privacy & Security</div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <h5>Store credentials locally only</h5>
+          <p>Credentials are saved in your browser's localStorage — never sent to any server except Instagram's API.</p>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" checked disabled>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <h5>Auto-refresh long-lived token</h5>
+          <p>Automatically refresh your token before it expires (60 days).</p>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="auto-refresh">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== CREATE PANEL ====== -->
+  <div class="panel" id="panel-create">
+    <p class="section-title">Create a Post or Reel</p>
+    <p class="section-sub">Compose your content and post immediately or schedule it.</p>
+
+    <div class="grid-2">
+      <div>
+        <div class="card">
+          <div class="card-title"><span class="icon">📸</span> Media Upload</div>
+          <div class="form-group">
+            <label>Post Type</label>
+            <select id="post-type" onchange="updatePostType()">
+              <option value="IMAGE">📷 Photo Post</option>
+              <option value="REELS">🎬 Reel (Video)</option>
+              <option value="CAROUSEL">🖼️ Carousel (Multi-image)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Media URL</label>
+            <input type="url" id="media-url" placeholder="https://your-image-hosting.com/image.jpg" />
+            <p style="font-size:0.75rem;color:var(--muted);margin-top:5px">
+              Instagram requires a publicly accessible URL. Use <a href="https://imgbb.com" target="_blank" style="color:var(--accent)">ImgBB</a> (free) or <a href="https://cloudinary.com" target="_blank" style="color:var(--accent)">Cloudinary</a> (free tier).
+            </p>
+          </div>
+          <div class="form-group" id="cover-url-group" style="display:none">
+            <label>Thumbnail URL (Reels)</label>
+            <input type="url" id="cover-url" placeholder="https://..." />
+          </div>
+          <div id="file-preview"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">⚙️</span> Reel Settings</div>
+          <div class="form-group">
+            <label>Share to Feed (Reels)</label>
+            <select id="share-to-feed">
+              <option value="true">Yes — also show in feed</option>
+              <option value="false">No — Reels tab only</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Location Tag (optional)</label>
+            <input type="text" id="location" placeholder="e.g. Mumbai, India" />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-title"><span class="icon">✍️</span> Caption</div>
+          <div class="form-group">
+            <textarea id="caption" placeholder="Write your caption here...&#10;&#10;Use line breaks, hashtags, and emojis 🔥" oninput="updateCharCount()"></textarea>
+            <div class="char-counter" id="char-counter">0 / 2200</div>
+          </div>
+          <div class="form-group">
+            <label>Hashtag Preset</label>
+            <select id="hashtag-preset" onchange="applyHashtagPreset()">
+              <option value="">— None —</option>
+              <option value="general">General (lifestyle)</option>
+              <option value="business">Business / Marketing</option>
+              <option value="food">Food & Recipes</option>
+              <option value="travel">Travel</option>
+              <option value="fitness">Fitness & Health</option>
+              <option value="tech">Technology</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">🏷️</span> Labels & Notes</div>
+          <div class="form-group">
+            <label>Internal Label (not posted)</label>
+            <input type="text" id="post-label" placeholder="e.g. Product launch week 1" />
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">🚀</span> Publish</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="publishNow()">🚀 Post Now</button>
+            <button class="btn btn-secondary" onclick="saveDraft()">💾 Save Draft</button>
+            <button class="btn btn-secondary" onclick="switchTab('schedule');prefillSchedule()">📅 Schedule</button>
+          </div>
+          <p style="font-size:0.75rem;color:var(--muted);margin-top:10px">
+            Posting Now uses the Instagram Graph API directly from your browser.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SCHEDULE PANEL ====== -->
+  <div class="panel" id="panel-schedule">
+    <p class="section-title">Schedule a Post</p>
+    <p class="section-sub">Set a date and time — the GitHub Action will auto-publish it.</p>
+
+    <div class="alert alert-info">
+      ℹ️ Scheduling uses a <strong>GitHub Actions workflow</strong> (free). After filling this form, you'll download a <code>.json</code> file to commit to your repo — the GitHub Action will post it at the right time automatically.
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span class="icon">📅</span> When to Post</div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="sched-date" />
+        </div>
+        <div class="form-group">
+          <label>Time</label>
+          <input type="time" id="sched-time" />
+        </div>
+        <div class="form-group">
+          <label>Timezone</label>
+          <select id="sched-tz">
+            <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+            <option value="UTC">UTC</option>
+            <option value="America/New_York">America/New_York (EST)</option>
+            <option value="America/Los_Angeles">America/Los_Angeles (PST)</option>
+            <option value="Europe/London">Europe/London (GMT)</option>
+            <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="icon">🔄</span> Repeat</div>
+        <div class="form-group">
+          <label>Frequency</label>
+          <select id="sched-repeat">
+            <option value="once">Once only</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Best Time Suggestion</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+            <button class="btn btn-secondary" style="font-size:0.75rem;padding:4px 10px" onclick="setBestTime('09:00')">9:00 AM</button>
+            <button class="btn btn-secondary" style="font-size:0.75rem;padding:4px 10px" onclick="setBestTime('12:00')">12:00 PM</button>
+            <button class="btn btn-secondary" style="font-size:0.75rem;padding:4px 10px" onclick="setBestTime('18:00')">6:00 PM</button>
+            <button class="btn btn-secondary" style="font-size:0.75rem;padding:4px 10px" onclick="setBestTime('21:00')">9:00 PM</button>
+          </div>
+          <p style="font-size:0.72rem;color:var(--muted);margin-top:6px">Peak engagement times (IST) for Indian audiences.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">📦</span> Content (filled from Create tab)</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Media URL</label>
+          <input type="url" id="s-media-url" placeholder="https://..." />
+        </div>
+        <div class="form-group">
+          <label>Post Type</label>
+          <select id="s-post-type">
+            <option value="IMAGE">📷 Photo</option>
+            <option value="REELS">🎬 Reel</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Caption</label>
+        <textarea id="s-caption" placeholder="Caption..."></textarea>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="generateScheduleFile()">⬇️ Download Schedule JSON</button>
+    <button class="btn btn-secondary" style="margin-left:10px" onclick="addToQueue()">➕ Add to Queue</button>
+  </div>
+
+  <!-- ====== QUEUE PANEL ====== -->
+  <div class="panel" id="panel-queue">
+    <p class="section-title">Post Queue</p>
+    <p class="section-sub">All your scheduled and draft posts.</p>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Scheduled</div>
+        <div class="stat-value purple" id="stat-scheduled">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Posted</div>
+        <div class="stat-value green" id="stat-posted">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Drafts</div>
+        <div class="stat-value gold" id="stat-drafts">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Failed</div>
+        <div class="stat-value blue" id="stat-failed">0</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <div class="card-title" style="margin:0"><span class="icon">📋</span> All Posts</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-secondary" style="font-size:0.78rem;padding:6px 12px" onclick="exportQueue()">⬇️ Export</button>
+          <button class="btn btn-secondary" style="font-size:0.78rem;padding:6px 12px" onclick="importQueue()">⬆️ Import</button>
+          <button class="btn btn-danger" style="font-size:0.78rem;padding:6px 12px" onclick="clearQueue()">🗑️ Clear All</button>
+        </div>
+      </div>
+      <div id="queue-container">
+        <table class="queue-table" id="queue-table">
+          <thead>
+            <tr>
+              <th>Label</th>
+              <th>Type</th>
+              <th>Caption</th>
+              <th>Scheduled</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="queue-body"></tbody>
+        </table>
+        <div id="queue-empty" style="text-align:center;padding:3rem;color:var(--muted)">
+          <div style="font-size:2.5rem;margin-bottom:0.5rem">📭</div>
+          <p>No posts in queue yet. Create one in the <strong>Create Post</strong> tab!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== GUIDE PANEL ====== -->
+  <div class="panel" id="panel-guide">
+    <p class="section-title">GitHub Pages Setup Guide</p>
+    <p class="section-sub">How to host this tool for free and enable scheduled posting.</p>
+
+    <div class="alert alert-success">
+      🎉 Total cost: ₹0. GitHub Pages hosting is free. Instagram Graph API is free. GitHub Actions scheduling is free.
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">📋</span> Part 1 — Host on GitHub Pages</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Create a GitHub Repository</h4>
+            <p>Go to <a href="https://github.com/new" target="_blank" style="color:var(--accent)">github.com/new</a> and create a public repo. Name it something like <code>instaflow</code>.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Upload index.html</h4>
+            <p>Upload the <code>index.html</code> file (this tool) to the root of your repository. You can drag and drop it in the GitHub UI.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Enable GitHub Pages</h4>
+            <p>Go to <strong>Settings → Pages</strong>, set Source to <strong>Deploy from a branch</strong>, choose <strong>main</strong> branch and <strong>/ (root)</strong>. Click Save.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Access Your Tool</h4>
+            <p>Your site will be live at <code>https://yourusername.github.io/instaflow</code> within ~2 minutes.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">📱</span> Part 2 — Get Instagram API Access (Free)</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Convert to Instagram Business/Creator Account</h4>
+            <p>In the Instagram app → Settings → Account → Switch to Professional Account. Choose Business or Creator.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Create a Facebook App</h4>
+            <p>Go to <a href="https://developers.facebook.com/apps/create/" target="_blank" style="color:var(--accent)">developers.facebook.com/apps/create</a> → Select "Business" app type → Fill details → Create App.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Add Instagram Graph API Product</h4>
+            <p>In your app dashboard → Add Product → Find <strong>Instagram Graph API</strong> → Set Up.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Get a Long-Lived Access Token</h4>
+            <p>Go to <a href="https://developers.facebook.com/tools/explorer/" target="_blank" style="color:var(--accent)">Graph API Explorer</a> → Select your app → Generate token with permissions: <code>instagram_basic</code>, <code>instagram_content_publish</code>. Then exchange for a long-lived token (valid 60 days).</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <h4>Get Your Instagram Business Account ID</h4>
+            <p>In Graph API Explorer, query: <code>me/accounts</code> then use the page ID to query <code>{page-id}?fields=instagram_business_account</code>. Copy the <code>id</code> value.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">6</div>
+          <div class="step-content">
+            <h4>Enter in Setup Tab</h4>
+            <p>Paste your Access Token and Account ID in the <strong>Setup</strong> tab and click Connect!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">⚡</span> Part 3 — Enable Scheduled Posting (GitHub Actions)</div>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">Create this file in your repo to auto-post on schedule:</p>
+      <button class="copy-btn" onclick="copyCode('action-code')">Copy</button>
+      <pre id="action-code">name: Instagram Auto-Post
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # Runs every 15 minutes to check
+  workflow_dispatch:         # Manual trigger
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check and Post Scheduled Posts
+        env:
+          ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+        run: |
+          python3 post_scheduler.py</pre>
+
+      <div style="margin-top:1rem">
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.8rem">Create <code>post_scheduler.py</code> in your repo:</p>
+        <button class="copy-btn" onclick="copyCode('python-code')">Copy</button>
+        <pre id="python-code">import os, json, requests
+from datetime import datetime, timezone
+
+ACCESS_TOKEN = os.environ['ACCESS_TOKEN']
+ACCOUNT_ID = os.environ['ACCOUNT_ID']
+QUEUE_FILE = 'queue.json'
+
+def load_queue():
+    if not os.path.exists(QUEUE_FILE):
+        return []
+    with open(QUEUE_FILE) as f:
+        return json.load(f)
+
+def save_queue(queue):
+    with open(QUEUE_FILE, 'w') as f:
+        json.dump(queue, f, indent=2)
+
+def post_to_instagram(item):
+    base = f"https://graph.facebook.com/v19.0/{ACCOUNT_ID}"
+    # Step 1: Create media container
+    params = {
+        'access_token': ACCESS_TOKEN,
+        'caption': item.get('caption', ''),
+    }
+    if item['type'] == 'REELS':
+        params['media_type'] = 'REELS'
+        params['video_url'] = item['media_url']
+        params['share_to_feed'] = 'true'
+    else:
+        params['image_url'] = item['media_url']
+
+    r = requests.post(f"{base}/media", params=params)
+    data = r.json()
+    if 'id' not in data:
+        print(f"Error creating container: {data}")
+        return False
+
+    container_id = data['id']
+
+    # Step 2: Publish
+    r2 = requests.post(f"{base}/media_publish", params={
+        'creation_id': container_id,
+        'access_token': ACCESS_TOKEN
+    })
+    result = r2.json()
+    print(f"Published: {result}")
+    return 'id' in result
+
+now = datetime.now(timezone.utc).timestamp()
+queue = load_queue()
+changed = False
+
+for item in queue:
+    if item.get('status') == 'scheduled':
+        if float(item.get('scheduled_ts', 0)) <= now:
+            success = post_to_instagram(item)
+            item['status'] = 'posted' if success else 'failed'
+            changed = True
+
+if changed:
+    save_queue(queue)
+    # Commit changes back to repo
+    os.system('git config user.email "action@github.com"')
+    os.system('git config user.name "GitHub Action"')
+    os.system('git add queue.json')
+    os.system('git commit -m "Update queue status after posting"')
+    os.system('git push')</pre>
+      </div>
+
+      <div class="alert alert-info" style="margin-top:1rem">
+        💡 Add your secrets: Go to repo → <strong>Settings → Secrets and variables → Actions</strong> → Add <code>INSTAGRAM_ACCESS_TOKEN</code> and <code>INSTAGRAM_ACCOUNT_ID</code>.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">🖼️</span> Part 4 — Free Image/Video Hosting</div>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">Instagram requires publicly accessible media URLs. Use these free services:</p>
+      <div class="grid-2">
+        <div style="background:var(--surface);border-radius:10px;padding:1rem;border:1px solid var(--border)">
+          <strong style="font-size:0.9rem">📷 Images</strong>
+          <p style="font-size:0.8rem;color:var(--muted);margin-top:4px"><a href="https://imgbb.com" target="_blank" style="color:var(--accent)">ImgBB.com</a> — Upload image, copy "Direct link". Free, no account needed.</p>
+        </div>
+        <div style="background:var(--surface);border-radius:10px;padding:1rem;border:1px solid var(--border)">
+          <strong style="font-size:0.9rem">🎬 Videos/Reels</strong>
+          <p style="font-size:0.8rem;color:var(--muted);margin-top:4px"><a href="https://cloudinary.com" target="_blank" style="color:var(--accent)">Cloudinary</a> free tier (10GB) or commit video to your GitHub repo and use the raw URL.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+// ============ STATE ============
+let queue = JSON.parse(localStorage.getItem('instaflow_queue') || '[]');
+let creds = JSON.parse(localStorage.getItem('instaflow_creds') || '{}');
+
+// ============ INIT ============
+document.addEventListener('DOMContentLoaded', () => {
+  if (creds.token && creds.accountId) {
+    updateConnectionStatus(true, 'Connected');
+  }
+  renderQueue();
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('sched-date').value = today;
+  document.getElementById('sched-time').value = '09:00';
+});
+
+// ============ TABS ============
+function switchTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  const tabs = ['setup','create','schedule','queue','guide'];
+  document.querySelectorAll('.tab')[tabs.indexOf(name)].classList.add('active');
+  if (name === 'queue') renderQueue();
+}
+
+// ============ CREDENTIALS ============
+function saveCredentials() {
+  const token = document.getElementById('access-token').value.trim();
+  const accountId = document.getElementById('account-id').value.trim();
+  const appId = document.getElementById('app-id').value.trim();
+  if (!token || !accountId) { showToast('Please enter both Access Token and Account ID', 'error'); return; }
+  creds = { token, accountId, appId };
+  localStorage.setItem('instaflow_creds', JSON.stringify(creds));
+  showToast('Credentials saved!', 'success');
+  updateConnectionStatus(true, 'Saved — tap Test Connection');
+}
+
+async function testConnection() {
+  if (!creds.token || !creds.accountId) { showToast('Save credentials first', 'error'); return; }
+  showToast('Testing connection...', 'info');
+  try {
+    const url = `https://graph.facebook.com/v19.0/${creds.accountId}?fields=name,username,profile_picture_url,followers_count&access_token=${creds.token}`;
+    const r = await fetch(url);
+    const d = await r.json();
+    if (d.error) { showToast('Error: ' + d.error.message, 'error'); updateConnectionStatus(false, 'Error'); return; }
+    updateConnectionStatus(true, '@' + (d.username || 'connected'));
+    showAccountInfo(d);
+    showToast('✅ Connected to @' + d.username, 'success');
+  } catch(e) { showToast('Network error: ' + e.message, 'error'); }
+}
+
+function showAccountInfo(d) {
+  document.getElementById('account-info').style.display = 'block';
+  document.getElementById('account-details').innerHTML = `
+    <div style="display:flex;align-items:center;gap:1rem">
+      ${d.profile_picture_url ? `<img src="${d.profile_picture_url}" style="width:56px;height:56px;border-radius:50%;border:2px solid var(--accent)"/>` : ''}
+      <div>
+        <div style="font-family:Syne,sans-serif;font-weight:700;font-size:1.1rem">${d.name || ''}</div>
+        <div style="color:var(--muted);font-size:0.85rem">@${d.username || ''}</div>
+        ${d.followers_count ? `<div style="font-size:0.8rem;color:var(--green);margin-top:2px">${d.followers_count.toLocaleString()} followers</div>` : ''}
+      </div>
+    </div>`;
+}
+
+function clearCredentials() {
+  localStorage.removeItem('instaflow_creds');
+  creds = {};
+  document.getElementById('access-token').value = '';
+  document.getElementById('account-id').value = '';
+  document.getElementById('app-id').value = '';
+  document.getElementById('account-info').style.display = 'none';
+  updateConnectionStatus(false, 'Not connected');
+  showToast('Credentials cleared', 'info');
+}
+
+function updateConnectionStatus(connected, text) {
+  document.getElementById('dot').className = 'status-dot' + (connected ? ' connected' : '');
+  document.getElementById('connection-status').textContent = text;
+}
+
+// ============ CREATE POST ============
+function updatePostType() {
+  const type = document.getElementById('post-type').value;
+  document.getElementById('cover-url-group').style.display = type === 'REELS' ? 'block' : 'none';
+}
+
+function updateCharCount() {
+  const len = document.getElementById('caption').value.length;
+  const el = document.getElementById('char-counter');
+  el.textContent = len + ' / 2200';
+  el.className = 'char-counter' + (len > 2200 ? ' over' : len > 1800 ? ' warn' : '');
+}
+
+const HASHTAGS = {
+  general: '#lifestyle #daily #instagood #photooftheday #happy #love #beautiful #instagram #picoftheday #nature',
+  business: '#business #entrepreneur #marketing #success #motivation #startup #brand #growth #digitalmarketing #hustle',
+  food: '#food #foodie #foodphotography #instafood #homecooking #recipe #yummy #delicious #eat #cooking',
+  travel: '#travel #wanderlust #explore #adventure #travelgram #travelphotography #nature #vacation #trip #discover',
+  fitness: '#fitness #gym #workout #health #motivation #fit #bodybuilding #training #lifestyle #strong',
+  tech: '#technology #tech #innovation #coding #programming #ai #software #developer #digital #future'
+};
+
+function applyHashtagPreset() {
+  const preset = document.getElementById('hashtag-preset').value;
+  if (!preset) return;
+  const caption = document.getElementById('caption');
+  const tags = HASHTAGS[preset] || '';
+  caption.value = caption.value.replace(/\n\n#.*$/s, '').trim() + '\n\n' + tags;
+  updateCharCount();
+}
+
+async function publishNow() {
+  if (!creds.token || !creds.accountId) { showToast('Connect your Instagram account first (Setup tab)', 'error'); return; }
+  const mediaUrl = document.getElementById('media-url').value.trim();
+  const caption = document.getElementById('caption').value.trim();
+  const type = document.getElementById('post-type').value;
+  if (!mediaUrl) { showToast('Please enter a media URL', 'error'); return; }
+
+  showToast('Creating media container...', 'info');
+
+  try {
+    const params = new URLSearchParams({ access_token: creds.token, caption });
+    if (type === 'REELS') {
+      params.append('media_type', 'REELS');
+      params.append('video_url', mediaUrl);
+      params.append('share_to_feed', document.getElementById('share-to-feed').value);
+    } else {
+      params.append('image_url', mediaUrl);
+    }
+
+    const r1 = await fetch(`https://graph.facebook.com/v19.0/${creds.accountId}/media`, { method: 'POST', body: params });
+    const d1 = await r1.json();
+    if (d1.error) { showToast('API Error: ' + d1.error.message, 'error'); return; }
+    if (!d1.id) { showToast('Failed to create container', 'error'); return; }
+
+    showToast('Publishing...', 'info');
+    const r2 = await fetch(`https://graph.facebook.com/v19.0/${creds.accountId}/media_publish`, {
+      method: 'POST',
+      body: new URLSearchParams({ access_token: creds.token, creation_id: d1.id })
+    });
+    const d2 = await r2.json();
+    if (d2.error) { showToast('Publish error: ' + d2.error.message, 'error'); return; }
+
+    showToast('✅ Posted successfully! ID: ' + d2.id, 'success');
+    addToQueueInternal({ label: document.getElementById('post-label').value || 'Posted', type, mediaUrl, caption, status: 'posted', postedAt: new Date().toISOString() });
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+function saveDraft() {
+  const mediaUrl = document.getElementById('media-url').value.trim();
+  const caption = document.getElementById('caption').value.trim();
+  const type = document.getElementById('post-type').value;
+  const label = document.getElementById('post-label').value || 'Draft';
+  addToQueueInternal({ label, type, mediaUrl, caption, status: 'draft', savedAt: new Date().toISOString() });
+  showToast('Draft saved!', 'success');
+}
+
+function prefillSchedule() {
+  document.getElementById('s-media-url').value = document.getElementById('media-url').value;
+  document.getElementById('s-caption').value = document.getElementById('caption').value;
+  document.getElementById('s-post-type').value = document.getElementById('post-type').value;
+}
+
+// ============ SCHEDULE ============
+function setBestTime(t) { document.getElementById('sched-time').value = t; }
+
+function getScheduledTimestamp() {
+  const date = document.getElementById('sched-date').value;
+  const time = document.getElementById('sched-time').value;
+  if (!date || !time) return null;
+  return new Date(date + 'T' + time).getTime() / 1000;
+}
+
+function generateScheduleFile() {
+  const ts = getScheduledTimestamp();
+  if (!ts) { showToast('Please set a date and time', 'error'); return; }
+  const item = {
+    label: 'Scheduled post',
+    type: document.getElementById('s-post-type').value,
+    media_url: document.getElementById('s-media-url').value,
+    caption: document.getElementById('s-caption').value,
+    status: 'scheduled',
+    scheduled_ts: ts,
+    scheduled_for: new Date(ts * 1000).toISOString(),
+    repeat: document.getElementById('sched-repeat').value
+  };
+  const blob = new Blob([JSON.stringify([item], null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'queue.json'; a.click();
+  showToast('⬇️ queue.json downloaded — commit it to your repo!', 'success');
+}
+
+function addToQueue() {
+  const ts = getScheduledTimestamp();
+  if (!ts) { showToast('Please set a date and time', 'error'); return; }
+  addToQueueInternal({
+    label: 'Scheduled post',
+    type: document.getElementById('s-post-type').value,
+    mediaUrl: document.getElementById('s-media-url').value,
+    caption: document.getElementById('s-caption').value,
+    status: 'scheduled',
+    scheduledTs: ts,
+    scheduledFor: new Date(ts * 1000).toLocaleString()
+  });
+  showToast('Added to queue!', 'success');
+}
+
+// ============ QUEUE ============
+function addToQueueInternal(item) {
+  item.id = Date.now();
+  queue.unshift(item);
+  localStorage.setItem('instaflow_queue', JSON.stringify(queue));
+  renderQueue();
+}
+
+function renderQueue() {
+  const body = document.getElementById('queue-body');
+  const empty = document.getElementById('queue-empty');
+  body.innerHTML = '';
+
+  let scheduled = 0, posted = 0, drafts = 0, failed = 0;
+  queue.forEach(item => {
+    if (item.status === 'scheduled') scheduled++;
+    if (item.status === 'posted') posted++;
+    if (item.status === 'draft') drafts++;
+    if (item.status === 'failed') failed++;
+  });
+  document.getElementById('stat-scheduled').textContent = scheduled;
+  document.getElementById('stat-posted').textContent = posted;
+  document.getElementById('stat-drafts').textContent = drafts;
+  document.getElementById('stat-failed').textContent = failed;
+
+  if (queue.length === 0) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  queue.forEach(item => {
+    const tr = document.createElement('tr');
+    const pillClass = { scheduled: 'pill-scheduled', posted: 'pill-posted', failed: 'pill-failed', draft: 'pill-draft' }[item.status] || 'pill-draft';
+    tr.innerHTML = `
+      <td>${item.label || '—'}</td>
+      <td>${item.type === 'REELS' ? '🎬' : '📷'} ${item.type}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.caption || '—'}</td>
+      <td style="font-size:0.78rem;color:var(--muted)">${item.scheduledFor || item.postedAt || item.savedAt || '—'}</td>
+      <td><span class="pill ${pillClass}">${item.status}</span></td>
+      <td>
+        <button class="btn btn-secondary" style="font-size:0.72rem;padding:4px 10px" onclick="deleteQueueItem(${item.id})">🗑️</button>
+      </td>`;
+    body.appendChild(tr);
+  });
+}
+
+function deleteQueueItem(id) {
+  queue = queue.filter(i => i.id !== id);
+  localStorage.setItem('instaflow_queue', JSON.stringify(queue));
+  renderQueue();
+  showToast('Removed', 'info');
+}
+
+function clearQueue() {
+  if (!confirm('Clear all posts from queue?')) return;
+  queue = [];
+  localStorage.setItem('instaflow_queue', JSON.stringify(queue));
+  renderQueue();
+  showToast('Queue cleared', 'info');
+}
+
+function exportQueue() {
+  const blob = new Blob([JSON.stringify(queue, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'instaflow_queue.json'; a.click();
+  showToast('Queue exported!', 'success');
+}
+
+function importQueue() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.onchange = e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (Array.isArray(data)) { queue = [...data, ...queue]; localStorage.setItem('instaflow_queue', JSON.stringify(queue)); renderQueue(); showToast('Queue imported!', 'success'); }
+        else showToast('Invalid file format', 'error');
+      } catch(err) { showToast('Parse error: ' + err.message, 'error'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ============ UTILS ============
+function showToast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'show ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = '', 3500);
+}
+
+function copyCode(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('Copied!', 'success'));
+}
+
+// Fill access token from localStorage on load
+window.addEventListener('load', () => {
+  if (creds.token) document.getElementById('access-token').value = creds.token;
+  if (creds.accountId) document.getElementById('account-id').value = creds.accountId;
+  if (creds.appId) document.getElementById('app-id').value = creds.appId;
+});
+</script>
+</body>
+</html>
